@@ -1,0 +1,67 @@
+Transform: 'AWS::Serverless-2016-10-31'
+Metadata:
+  'AWS::ServerlessRepo::Application':
+    Name: AwsLambdaPythonLayerApp
+    Description: 'This Lambda Python Layer applet demonstrates use of Lambda layers to package libraries and dependencies.'
+    Author: 'Bishr Tabbaa'
+    SpdxLicenseId: Apache-2.0
+    LicenseUrl: LICENSE.txt
+    ReadmeUrl: README.md
+    Labels:
+      - lambda-python-layer
+    HomePageUrl: 'https://github.com/bishrtabbaa/aws-lambda-python-layer-app'
+    SemanticVersion: 2024.1.1
+    SourceCodeUrl: 'https://github.com/bishrtabbaa/aws-lambda-python-layer-app'
+Parameters:
+  LambdaFunctionName:
+    Description: 'This is the name of the lambda function that will be created. This name must satisfy the pattern ^[a-z0-9-_]{1,64}$'
+    Type: String
+  LambdaTimeout:
+    Description: 'Maximum Lambda invocation runtime in seconds. (min 1 - 900 max)'
+    Default: 900
+    Type: Number
+  LambdaMemory:
+    Description: 'Lambda memory in MB (min 128 - 3008 max).'
+    Default: 3008
+    Type: Number
+  LambdaRoleARN:
+    Description: "(Optional) Custom IAM role ARN"
+    Type: String
+    Default: ""
+  LambdaLayerARN:
+    Description: (Required) Custom Lambda Layer ARN'
+    Type: String
+Conditions:
+  NotHasLambdaRole: !Equals [!Ref LambdaRoleARN, ""]
+Resources:
+  AwsLambdaPythonLayerAppFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      CodeUri: 
+        ./
+
+# NO PROGRAM.MAIN()
+      Handler: "aws-lambda-python-layer-app.lambda_handler"
+      Description: "Demonstrate Lambda Python function with custom Lambda Layer"
+      Runtime: python3.8
+      Timeout: !Ref LambdaTimeout
+      MemorySize: !Ref LambdaMemory
+      Role: !If [NotHasLambdaRole, !GetAtt FunctionRole.Arn, !Ref LambdaRoleARN]
+      Layers:
+        - Ref: LambdaLayerARN
+  FunctionRole:
+    Condition: NotHasLambdaRole
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+                - "sts:AssumeRole"
